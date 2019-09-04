@@ -27,12 +27,13 @@ if __name__ == '__main__':
     os.chdir(args.root_dir)
 
     file_counter = 0
+    rej_counter = 0
     outfile = open(args.filename, 'w')
 
     for root, dirs, files in os.walk('.'): 
         for f in files: 
             if f[-4:] == '.jpg': 
-                mat_path = f.replace('.jpg', '.mat')
+                mat_path = os.path.join(root, f.replace('.jpg', '.mat'))
                 # We get the pose in radians
                 pose = utils.get_ypr_from_mat(mat_path)
                 # And convert to degrees.
@@ -45,5 +46,8 @@ if __name__ == '__main__':
                         outfile.write('\n')
                     outfile.write(root + '/' + f[:-4])
                     file_counter += 1
+                else:
+                    rej_counter += 1
     outfile.close()
-    print(f'{file_counter} files listed!')
+    print(f'{file_counter} files listed! {rej_counter} files had out-of-range'
+        f' values and kept out of the list!')
