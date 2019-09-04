@@ -46,12 +46,12 @@ if __name__ == '__main__':
     # ResNet50 structure
     model = hopenet.Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
 
-    print 'Loading snapshot.'
+    print('Loading snapshot.')
     # Load snapshot
     saved_state_dict = torch.load(snapshot_path)
     model.load_state_dict(saved_state_dict)
 
-    print 'Loading data.'
+    print('Loading data.')
 
     transformations = transforms.Compose([transforms.Scale(224),
     transforms.CenterCrop(224), transforms.ToTensor(),
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     elif args.dataset == 'AFW':
         pose_dataset = datasets.AFW(args.data_dir, args.filename_list, transformations)
     else:
-        print 'Error: not a valid dataset name'
+        print('Error: not a valid dataset name')
         sys.exit()
     test_loader = torch.utils.data.DataLoader(dataset=pose_dataset,
                                                batch_size=args.batch_size,
@@ -82,13 +82,13 @@ if __name__ == '__main__':
 
     model.cuda(gpu)
 
-    print 'Ready to test network.'
+    print('Ready to test network.')
 
     # Test the Model
     model.eval()  # Change model to 'eval' mode (BN uses moving mean/var).
     total = 0
 
-    idx_tensor = [idx for idx in xrange(66)]
+    idx_tensor = [idx for idx in range(66)]
     idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
 
     yaw_error = .0
@@ -141,5 +141,6 @@ if __name__ == '__main__':
             cv2.imwrite(os.path.join('output/images', name + '.jpg'), cv2_img)
 
     print('Test error in degrees of the model on the ' + str(total) +
-    ' test images. Yaw: %.4f, Pitch: %.4f, Roll: %.4f' % (yaw_error / total,
-    pitch_error / total, roll_error / total))
+        ' test images. Yaw: %.4f, Pitch: %.4f, Roll: %.4f, MAE: %.4f' % (
+        yaw_error / total, pitch_error / total, roll_error / total,
+        (yaw_error + pitch_error + roll_error) / (total * 3)))

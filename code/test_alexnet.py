@@ -138,6 +138,7 @@ if __name__ == '__main__':
             utils.draw_axis(cv2_img, yaw_predicted[0], pitch_predicted[0], roll_predicted[0], tdx = 200, tdy= 200, size=100)
             cv2.imwrite(os.path.join('output/images', name + '.jpg'), cv2_img)
 
-    print('Test error in degrees of the model on the ' + str(total) +
-    ' test images. Yaw: %.4f, Pitch: %.4f, Roll: %.4f' % (yaw_error / total,
-    pitch_error / total, roll_error / total))
+        print('Test error in degrees of the model on the ' + str(total) +
+            ' test images. Yaw: %.4f, Pitch: %.4f, Roll: %.4f, MAE: %.4f' % (
+            yaw_error / total, pitch_error / total, roll_error / total,
+            (yaw_error + pitch_error + roll_error) / (total * 3)))
