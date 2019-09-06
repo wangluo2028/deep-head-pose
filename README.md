@@ -38,7 +38,7 @@ The best model I got so far was from **alpha = 1** which performs as below on AF
 
 Yaw: 5.4517, Pitch: 6.3541, Roll: 5.3127, **MAE: 5.7062**
 
-The snapshot of this model can be downloaded [here]().
+The snapshot of this model can be downloaded from [models/hopenet_snapshot_a1.pkl](https://github.com/shahroudy/deep-head-pose/raw/master/models/hopenet_snapshot_a1.pkl).
 
 ## Improve the Efficiency of the Model
 
