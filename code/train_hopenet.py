@@ -26,32 +26,36 @@ def parse_args():
     parser.add_argument(
         '--num_epochs', dest='num_epochs', 
         help='Maximum number of training epochs.',
-        default=5, type=int)
+        default=50, type=int)
     parser.add_argument(
         '--batch_size', dest='batch_size', help='Batch size.',
-        default=16, type=int)
+        default=64, type=int)
     parser.add_argument(
         '--lr', dest='lr', help='Base learning rate.',
-        default=0.001, type=float)
+        default=0.000001, type=float)
     parser.add_argument(
         '--dataset', dest='dataset', help='Dataset type.', 
         default='Pose_300W_LP', type=str)
     parser.add_argument(
         '--data_dir', dest='data_dir', help='Directory path for data.',
-        default='', type=str)
+        default='datasets/300W_LP', type=str)
     parser.add_argument(
         '--filename_list', dest='filename_list', 
         help='Path to text file containing relative paths for every example.',
-        default='', type=str)
+        default='datasets/300W_LP/files.txt', type=str)
     parser.add_argument(
         '--output_string', dest='output_string', 
         help='String appended to output snapshots.', default = '', type=str)
     parser.add_argument(
         '--alpha', dest='alpha', help='Regression loss coefficient.',
-        default=0.001, type=float)
+        default=1, type=float)
     parser.add_argument(
         '--snapshot', dest='snapshot', help='Path of model snapshot.',
         default='', type=str)
+    parser.add_argument(
+        '--resnet_layers', dest='resnet_layers', 
+        help='Layers of the ResNet, can be 18, 34, [50], 101, or 152',
+        default=50, type=int)
 
     args = parser.parse_args()
     return args
@@ -102,21 +106,40 @@ if __name__ == '__main__':
     if not os.path.exists('output/snapshots'):
         os.makedirs('output/snapshots')
 
-    # ResNet50 structure
-    model = hopenet.Hopenet(
-        torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
+    # ResNet structure
+    if args.resnet_layers == 18:
+        model = hopenet.Hopenet(
+            torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 66)
+        pre_url = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
+    elif args.resnet_layers == 34:
+        model = hopenet.Hopenet(
+            torchvision.models.resnet.BasicBlock, [3,4,6,3], 66)
+        pre_url = 'https://download.pytorch.org/models/resnet34-333f7ec4.pth'
+    elif args.resnet_layers == 101:
+        model = hopenet.Hopenet(
+            torchvision.models.resnet.Bottleneck, [3, 4, 23, 3], 66)
+        pre_url = 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth'
+    elif args.resnet_layers == 152:
+        model = hopenet.Hopenet(
+            torchvision.models.resnet.Bottleneck, [3, 8, 36, 3], 66)
+        pre_url = 'https://download.pytorch.org/models/resnet152-b121ed2d.pth'
+    else:
+        if args.resnet_layers != 50:
+            print('Invalid value for resnet_layers is passed! '
+                'The default value of 50 layers will be used instead!')
+        model = hopenet.Hopenet(
+            torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
+        pre_url = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
 
     if args.snapshot == '':
-        load_filtered_state_dict(model, model_zoo.load_url(
-            'https://download.pytorch.org/models/resnet50-19c8e357.pth'
-            ))
+        load_filtered_state_dict(model, model_zoo.load_url(pre_url))
     else:
         saved_state_dict = torch.load(args.snapshot)
         model.load_state_dict(saved_state_dict)
 
     print('Loading data.')
 
-    transformations = transforms.Compose([transforms.Scale(240),
+    transformations = transforms.Compose([transforms.Resize(240),
         transforms.RandomCrop(224), transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.485, 0.456, 0.406], 
@@ -164,7 +187,7 @@ if __name__ == '__main__':
     # Regression loss coefficient
     alpha = args.alpha
 
-    softmax = nn.Softmax().cuda(gpu)
+    softmax = nn.Softmax(dim=1).cuda(gpu)
     idx_tensor = [idx for idx in range(66)]
     idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
 
