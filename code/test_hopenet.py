@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     print('Loading data.')
 
-    transformations = transforms.Compose([transforms.Scale(224),
+    transformations = transforms.Compose([transforms.Resize(224),
     transforms.CenterCrop(224), transforms.ToTensor(),
     transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     pitch_error = .0
     roll_error = .0
 
-    l1loss = torch.nn.L1Loss(size_average=False)
+    l1loss = torch.nn.L1Loss()
 
     for i, (images, labels, cont_labels, name) in enumerate(test_loader):
         images = Variable(images).cuda(gpu)
