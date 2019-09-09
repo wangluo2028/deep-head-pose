@@ -15,7 +15,7 @@ I applied minor changes to the code so that I can work with in using **PyTorch v
 ## Better Training for Hopenet
 
 The best reported results for AFLW2000 dataset, provided in the CVPRW paper (Table 1), are:  
-Yaw: 6.470, Pitch: 6.559, Roll: 5.436, and MAE: **6.155**
+Yaw: 6.470, Pitch: 6.559, Roll: 5.436, and **MAE: 6.155**
 
 As reported in the paper, to achieve this result, they used below settings:
 * Training Dataset: 300W-LP
@@ -46,7 +46,7 @@ An argument is now added to the train_hopenet.py and test_hopenet.py modules cal
 * Squeezenet_1_1
 * MobileNetV2
 
-The best performing model with **ResNet18** architecture [snapshot]() achieves:  
+The best performing model with **ResNet18** architecture [snapshot](https://github.com/shahroudy/deep-head-pose/raw/master/models/hopenet_resnet18.pkl) achieves:  
 Yaw: 6.0897, Pitch: 6.9588, Roll: 6.0907, **MAE: 6.3797**
 
 With MobileNetV2 architechture [snapshot]() I could reach to:
