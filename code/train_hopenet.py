@@ -66,7 +66,7 @@ def get_ignored_params(model, arch):
     if arch.find('ResNet') >= 0:
         b = [model.conv1, model.bn1, model.fc_finetune]
     elif arch.find('Squeezenet') >= 0 or arch.find('MobileNetV2') >= 0:
-        b = []
+        b = [model.features[0]]
     else:
         raise('Invalid architecture is passed!')
 
@@ -83,7 +83,7 @@ def get_non_ignored_params(model, arch):
     if arch.find('ResNet') >= 0:
         b = [model.layer1, model.layer2, model.layer3, model.layer4]
     elif arch.find('Squeezenet') >= 0 or arch.find('MobileNetV2') >= 0:
-        b = [model.features]
+        b = [model.features[1:]]
     else:
         raise('Invalid architecture is passed!')
 
