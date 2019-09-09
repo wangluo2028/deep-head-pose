@@ -41,10 +41,11 @@ def parse_args():
     parser.add_argument('--dataset', 
         dest='dataset', help='Dataset type.', 
         default='AFLW2000', type=str)
-    parser.add_argument('--resnet_layers', 
-        dest='resnet_layers', 
-        help='Layers of the ResNet, can be 18, 34, [50], 101, or 152',
-        default=50, type=int)
+    parser.add_argument(
+        '--arch', dest='arch', 
+        help='Network architecture, can be: ResNet18, ResNet34, [ResNet50], '
+            'ResNet101, ResNet152, Squeezenet_1_0, Squeezenet_1_1, MobileNetV2',
+        default='ResNet50', type=str)
 
     args = parser.parse_args()
     return args
@@ -57,22 +58,28 @@ if __name__ == '__main__':
     snapshot_path = args.snapshot
 
     # ResNet structure
-    if args.resnet_layers == 18:
+    if args.arch == 'ResNet18':
         model = hopenet.Hopenet(
             torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 66)
-    elif args.resnet_layers == 34:
+    elif args.arch == 'ResNet34':
         model = hopenet.Hopenet(
             torchvision.models.resnet.BasicBlock, [3,4,6,3], 66)
-    elif args.resnet_layers == 101:
+    elif args.arch == 'ResNet101':
         model = hopenet.Hopenet(
             torchvision.models.resnet.Bottleneck, [3, 4, 23, 3], 66)
-    elif args.resnet_layers == 152:
+    elif args.arch == 'ResNet152':
         model = hopenet.Hopenet(
             torchvision.models.resnet.Bottleneck, [3, 8, 36, 3], 66)
+    elif args.arch == 'Squeezenet_1_0':
+        model = hopelessnet.Hopeless_Squeezenet(args.arch, 66)
+    elif args.arch == 'Squeezenet_1_1':
+        model = hopelessnet.Hopeless_Squeezenet(args.arch, 66)
+    elif args.arch == 'MobileNetV2':
+        model = hopelessnet.Hopeless_MobileNetV2(66, 1.0)
     else:
-        if args.resnet_layers != 50:
-            print('Invalid value for resnet_layers is passed! '
-                'The default value of 50 layers will be used instead!')
+        if args.arch != 'ResNet50':
+            print('Invalid value for architecture is passed! '
+                'The default value of ResNet50 will be used instead!')
         model = hopenet.Hopenet(
             torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
 

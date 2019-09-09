@@ -1,4 +1,4 @@
-# Improving Hopenet #
+# HopelessNet: Improving Hopenet #
 
 <div align="center">
   <img src="https://i.imgur.com/K7jhHOg.png" width="380"><br><br>
@@ -20,14 +20,10 @@ The best reported results for AFLW2000 dataset, provided in the CVPRW paper (Tab
 Yaw: 6.470, Pitch: 6.559, Roll: 5.436, and MAE: **6.155**
 
 As reported in the paper, to achieve this result, they used below settings:
-
-Training Dataset: 300W-LP
-
-Alpha: 2
-
-Batch Size: 128
-
-Initial Learning Rate: 1e-5
+* Training Dataset: 300W-LP
+* Alpha: 2
+* Batch Size: 128
+* Learning Rate: 1e-5
 
 Using the provided code, I tried similar settings.
 Except for **batch size** for which I had to reduce to **64** due to the memory limitation of my GPU.
@@ -40,8 +36,27 @@ Yaw: 5.4517, Pitch: 6.3541, Roll: 5.3127, **MAE: 5.7062**
 
 The snapshot of this model can be downloaded from [models/hopenet_snapshot_a1.pkl](https://github.com/shahroudy/deep-head-pose/raw/master/models/hopenet_snapshot_a1.pkl).
 
-## Improve the Efficiency of the Model
+## Improve the Efficiency of the Model with HopeLessNet :D
 
 The original Hopenet method uses a ResNet50 convnet which is considered to be a heavy weight and inefficient model, specifically to be used on embedded or mobile platform.
 
-To mitigate this issue, we can think of replacing this module with a lighter network e.g. ResNet18, Squeezenet, MobileNet, or ShuffleNet...
+To mitigate this issue, we can think of replacing this module with a lighter network e.g. ResNet18, Squeezenet, or MobileNet.
+
+An argument is now added to the train_hopenet.py and test_hopenet.py modules called "arch" which can change the base network's architecture to:
+* ResNet18
+* ResNet34
+* ResNet50
+* ResNet101
+* ResNet152
+* Squeezenet_1_0
+* Squeezenet_1_1
+* MobileNetV2
+
+The best performing model with **ResNet18** architecture [snapshot]() achieves:
+Yaw: 6.0897, Pitch: 6.9588, Roll: 6.0907, **MAE: 6.3797**
+
+With MobileNetV2 architechture [snapshot]() I could reach to:
+
+And with Squeezenet_1_0 architechture [snapshot]() we can get:
+
+Lastly, Squeezenet_1_1 architechture [snapshot]() could perform:

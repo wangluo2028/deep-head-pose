@@ -13,7 +13,7 @@ import torchvision
 import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
 
-import datasets, hopenet
+import datasets, hopenet, hopelessnet
 import torch.utils.model_zoo as model_zoo
 
 def parse_args():
@@ -53,16 +53,23 @@ def parse_args():
         '--snapshot', dest='snapshot', help='Path of model snapshot.',
         default='', type=str)
     parser.add_argument(
-        '--resnet_layers', dest='resnet_layers', 
-        help='Layers of the ResNet, can be 18, 34, [50], 101, or 152',
-        default=50, type=int)
+        '--arch', dest='arch', 
+        help='Network architecture, can be: ResNet18, ResNet34, [ResNet50], '
+            'ResNet101, ResNet152, Squeezenet_1_0, Squeezenet_1_1, MobileNetV2',
+        default='ResNet50', type=str)
 
     args = parser.parse_args()
     return args
 
-def get_ignored_params(model):
+def get_ignored_params(model, arch):
     # Generator function that yields ignored params.
-    b = [model.conv1, model.bn1, model.fc_finetune]
+    if arch.find('ResNet') >= 0:
+        b = [model.conv1, model.bn1, model.fc_finetune]
+    elif arch.find('Squeezenet') >= 0 or arch.find('MobileNetV2') >= 0:
+        b = []
+    else:
+        raise('Invalid architecture is passed!')
+
     for i in range(len(b)):
         for module_name, module in b[i].named_modules():
             if 'bn' in module_name:
@@ -70,9 +77,16 @@ def get_ignored_params(model):
             for name, param in module.named_parameters():
                 yield param
 
-def get_non_ignored_params(model):
+
+def get_non_ignored_params(model, arch):
     # Generator function that yields params that will be optimized.
-    b = [model.layer1, model.layer2, model.layer3, model.layer4]
+    if arch.find('ResNet') >= 0:
+        b = [model.layer1, model.layer2, model.layer3, model.layer4]
+    elif arch.find('Squeezenet') >= 0 or arch.find('MobileNetV2') >= 0:
+        b = [model.features]
+    else:
+        raise('Invalid architecture is passed!')
+
     for i in range(len(b)):
         for module_name, module in b[i].named_modules():
             if 'bn' in module_name:
@@ -80,13 +94,25 @@ def get_non_ignored_params(model):
             for name, param in module.named_parameters():
                 yield param
 
-def get_fc_params(model):
+
+def get_fc_params(model, arch):
     # Generator function that yields fc layer params.
-    b = [model.fc_yaw, model.fc_pitch, model.fc_roll]
+    if arch.find('ResNet') >= 0:
+        b = [model.fc_yaw, model.fc_pitch, model.fc_roll]
+    elif arch.find('Squeezenet') >= 0 or arch.find('MobileNetV2') >= 0:
+        b = [
+            model.classifier_yaw, 
+            model.classifier_pitch, 
+            model.classifier_roll
+        ]
+    else:
+        raise('Invalid architecture is passed!')
+
     for i in range(len(b)):
         for module_name, module in b[i].named_modules():
             for name, param in module.named_parameters():
                 yield param
+
 
 def load_filtered_state_dict(model, snapshot):
     # By user apaszke from discuss.pytorch.org
@@ -106,27 +132,39 @@ if __name__ == '__main__':
     if not os.path.exists('output/snapshots'):
         os.makedirs('output/snapshots')
 
-    # ResNet structure
-    if args.resnet_layers == 18:
+    # Network architecture
+    if args.arch == 'ResNet18':
         model = hopenet.Hopenet(
             torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 66)
         pre_url = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
-    elif args.resnet_layers == 34:
+    elif args.arch == 'ResNet34':
         model = hopenet.Hopenet(
             torchvision.models.resnet.BasicBlock, [3,4,6,3], 66)
         pre_url = 'https://download.pytorch.org/models/resnet34-333f7ec4.pth'
-    elif args.resnet_layers == 101:
+    elif args.arch == 'ResNet101':
         model = hopenet.Hopenet(
             torchvision.models.resnet.Bottleneck, [3, 4, 23, 3], 66)
         pre_url = 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth'
-    elif args.resnet_layers == 152:
+    elif args.arch == 'ResNet152':
         model = hopenet.Hopenet(
             torchvision.models.resnet.Bottleneck, [3, 8, 36, 3], 66)
         pre_url = 'https://download.pytorch.org/models/resnet152-b121ed2d.pth'
+    elif args.arch == 'Squeezenet_1_0':
+        model = hopelessnet.Hopeless_Squeezenet(args.arch, 66)
+        pre_url = \
+            'https://download.pytorch.org/models/squeezenet1_0-a815701f.pth'
+    elif args.arch == 'Squeezenet_1_1':
+        model = hopelessnet.Hopeless_Squeezenet(args.arch, 66)
+        pre_url = \
+            'https://download.pytorch.org/models/squeezenet1_1-f364aa15.pth'
+    elif args.arch == 'MobileNetV2':
+        model = hopelessnet.Hopeless_MobileNetV2(66, 1.0)
+        pre_url = \
+            'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth'
     else:
-        if args.resnet_layers != 50:
-            print('Invalid value for resnet_layers is passed! '
-                'The default value of 50 layers will be used instead!')
+        if args.arch != 'ResNet50':
+            print('Invalid value for architecture is passed! '
+                'The default value of ResNet50 will be used instead!')
         model = hopenet.Hopenet(
             torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
         pre_url = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
@@ -192,9 +230,9 @@ if __name__ == '__main__':
     idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
 
     optimizer = torch.optim.Adam([
-        {'params': get_ignored_params(model), 'lr': 0},
-        {'params': get_non_ignored_params(model), 'lr': args.lr},
-        {'params': get_fc_params(model), 'lr': args.lr * 5}
+        {'params': get_ignored_params(model, args.arch), 'lr': 0},
+        {'params': get_non_ignored_params(model, args.arch), 'lr': args.lr},
+        {'params': get_fc_params(model, args.arch), 'lr': args.lr * 5}
         ], lr = args.lr)
 
     print('Ready to train network.')
