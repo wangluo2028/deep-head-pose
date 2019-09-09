@@ -57,7 +57,7 @@ if __name__ == '__main__':
     gpu = args.gpu_id
     snapshot_path = args.snapshot
 
-    # ResNet structure
+    # Base network structure
     if args.arch == 'ResNet18':
         model = hopenet.Hopenet(
             torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 66)

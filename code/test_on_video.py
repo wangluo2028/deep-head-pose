@@ -14,20 +14,33 @@ import torchvision
 import torch.nn.functional as F
 from PIL import Image
 
-import datasets, hopenet, utils
+import datasets, hopenet, hopelessnet, utils
 
 def parse_args():
     """Parse input arguments."""
-    parser = argparse.ArgumentParser(description='Head pose estimation using the Hopenet network.')
-    parser.add_argument('--gpu', dest='gpu_id', help='GPU device id to use [0]',
-            default=0, type=int)
-    parser.add_argument('--snapshot', dest='snapshot', help='Path of model snapshot.',
-          default='', type=str)
-    parser.add_argument('--video', dest='video_path', help='Path of video')
-    parser.add_argument('--bboxes', dest='bboxes', help='Bounding box annotations of frames')
-    parser.add_argument('--output_string', dest='output_string', help='String appended to output file')
-    parser.add_argument('--n_frames', dest='n_frames', help='Number of frames', type=int)
-    parser.add_argument('--fps', dest='fps', help='Frames per second of source video', type=float, default=30.)
+    parser = argparse.ArgumentParser(
+        description='Head pose estimation using the Hopenet network.')
+    parser.add_argument('--gpu', 
+        dest='gpu_id', help='GPU device id to use [0]', default=0, type=int)
+    parser.add_argument('--snapshot', 
+        dest='snapshot', help='Path of model snapshot.', default='', type=str)
+    parser.add_argument('--video', 
+        dest='video_path', help='Path of video')
+    parser.add_argument('--bboxes', 
+        dest='bboxes', help='Bounding box annotations of frames')
+    parser.add_argument('--output_string', 
+        dest='output_string', help='String appended to output file')
+    parser.add_argument('--n_frames', 
+        dest='n_frames', help='Number of frames', type=int)
+    parser.add_argument('--fps', 
+        dest='fps', help='Frames per second of source video', 
+        type=float, default=30.)
+    parser.add_argument('--arch', 
+        dest='arch', 
+        help='Network architecture, can be: ResNet18, ResNet34, [ResNet50], '
+            'ResNet101, ResNet152, Squeezenet_1_0, Squeezenet_1_1, MobileNetV2',
+        default='ResNet50', type=str)
+
     args = parser.parse_args()
     return args
 
@@ -48,15 +61,38 @@ if __name__ == '__main__':
     if not os.path.exists(args.video_path):
         sys.exit('Video does not exist')
 
-    # ResNet50 structure
-    model = hopenet.Hopenet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
+    # Base network structure
+    if args.arch == 'ResNet18':
+        model = hopenet.Hopenet(
+            torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 66)
+    elif args.arch == 'ResNet34':
+        model = hopenet.Hopenet(
+            torchvision.models.resnet.BasicBlock, [3,4,6,3], 66)
+    elif args.arch == 'ResNet101':
+        model = hopenet.Hopenet(
+            torchvision.models.resnet.Bottleneck, [3, 4, 23, 3], 66)
+    elif args.arch == 'ResNet152':
+        model = hopenet.Hopenet(
+            torchvision.models.resnet.Bottleneck, [3, 8, 36, 3], 66)
+    elif args.arch == 'Squeezenet_1_0':
+        model = hopelessnet.Hopeless_Squeezenet(args.arch, 66)
+    elif args.arch == 'Squeezenet_1_1':
+        model = hopelessnet.Hopeless_Squeezenet(args.arch, 66)
+    elif args.arch == 'MobileNetV2':
+        model = hopelessnet.Hopeless_MobileNetV2(66, 1.0)
+    else:
+        if args.arch != 'ResNet50':
+            print('Invalid value for architecture is passed! '
+                'The default value of ResNet50 will be used instead!')
+        model = hopenet.Hopenet(
+            torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 66)
 
-    print 'Loading snapshot.'
+    print('Loading snapshot.')
     # Load snapshot
     saved_state_dict = torch.load(snapshot_path)
     model.load_state_dict(saved_state_dict)
 
-    print 'Loading data.'
+    print('Loading data.')
 
     transformations = transforms.Compose([transforms.Scale(224),
     transforms.CenterCrop(224), transforms.ToTensor(),
@@ -64,13 +100,13 @@ if __name__ == '__main__':
 
     model.cuda(gpu)
 
-    print 'Ready to test network.'
+    print('Ready to test network.')
 
     # Test the Model
     model.eval()  # Change model to 'eval' mode (BN uses moving mean/var).
     total = 0
 
-    idx_tensor = [idx for idx in xrange(66)]
+    idx_tensor = [idx for idx in range(66)]
     idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
 
     video = cv2.VideoCapture(video_path)
@@ -105,7 +141,7 @@ if __name__ == '__main__':
         line = line.split(' ')
         det_frame_num = int(line[0])
 
-        print frame_num
+        print(frame_num)
 
         # Stop at a certain frame number
         if frame_num > args.n_frames:
