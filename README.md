@@ -12,6 +12,10 @@ For details about the method and quantitative results please check their CVPR Wo
 Here I am trying to revisit this method and improve its performance, specifically for testing on AFLW2000 dataset.  
 I applied minor changes to the code so that I can work with in using **PyTorch version 1.1** and **Python3**.
 
+<div align="center">
+<img src="output-amir.gif"/><br><br>
+</div>
+
 ## Better Training for Hopenet
 
 The best reported results for AFLW2000 dataset, provided in the CVPRW paper (Table 1), are:  
