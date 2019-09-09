@@ -13,7 +13,7 @@ import torch.backends.cudnn as cudnn
 import torchvision
 import torch.nn.functional as F
 
-import datasets, hopenet, utils
+import datasets, hopenet, hopelessnet, utils
 
 def parse_args():
     """Parse input arguments."""
