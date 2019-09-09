@@ -49,7 +49,7 @@ An argument is now added to the train_hopenet.py and test_hopenet.py modules cal
 The best performing model with **ResNet18** architecture [snapshot](https://github.com/shahroudy/deep-head-pose/raw/master/models/hopenet_resnet18.pkl) achieves:  
 Yaw: 6.0897, Pitch: 6.9588, Roll: 6.0907, **MAE: 6.3797**
 
-With MobileNetV2 architechture [snapshot]() I could reach to:  
+With MobileNetV2 architechture [snapshot](https://github.com/shahroudy/deep-head-pose/raw/master/models/mobilenetv2.pkl) I could reach to:  
 Yaw: 7.4363, Pitch: 7.0631, Roll: 6.7466, **MAE: 7.0820**
 
 And with Squeezenet_1_0 architechture [snapshot]() we can get:
