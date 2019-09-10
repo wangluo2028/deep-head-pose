@@ -54,7 +54,7 @@ The best performing model with **ResNet18** architecture [snapshot](https://gith
 Yaw: 6.0897, Pitch: 6.9588, Roll: 6.0907, **MAE: 6.3797**
 
 With **MobileNetV2** architechture [snapshot](https://github.com/shahroudy/deep-head-pose/raw/master/models/mobilenetv2.pkl) I could reach to:  
-Yaw: 7.8606, Pitch: 6.9765, Roll: 6.2573, **MAE: 7.0315**
+Yaw: 7.3247, Pitch: 6.9425, Roll: 6.2106, **MAE: 6.8259**
 
 And with **Squeezenet_1_0** architechture [snapshot]() we can get:  
 Yaw: 7.2015, Pitch: 7.9230, Roll: 6.8532, **MAE: 7.3259**
