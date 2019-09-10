@@ -60,6 +60,6 @@ And with **Squeezenet_1_0** architechture [snapshot]() we can get:
 Yaw: 7.2015, Pitch: 7.9230, Roll: 6.8532, **MAE: 7.3259**
 
 Lastly, **Squeezenet_1_1** architechture [snapshot]() could perform:  
-Yaw: 9.3317, Pitch: 7.5716, Roll: 6.6840, **MAE: 7.8624**
+Yaw: 8.8815, Pitch: 7.4020, Roll: 7.1891, **MAE: 7.8242**
 
 It is good to mention about [HopeNet-Lite](https://github.com/OverEuro/deep-head-pose-lite), which also adopted a MobileNet like architecture for HopeNet.
