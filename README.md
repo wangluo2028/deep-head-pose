@@ -53,13 +53,13 @@ An argument is now added to the train_hopenet.py and test_hopenet.py modules cal
 The best performing model with **ResNet18** architecture [snapshot](https://github.com/shahroudy/deep-head-pose/raw/master/models/hopenet_resnet18.pkl) achieves:  
 Yaw: 6.0897, Pitch: 6.9588, Roll: 6.0907, **MAE: 6.3797**
 
-With MobileNetV2 architechture [snapshot](https://github.com/shahroudy/deep-head-pose/raw/master/models/mobilenetv2.pkl) I could reach to:  
+With **MobileNetV2** architechture [snapshot](https://github.com/shahroudy/deep-head-pose/raw/master/models/mobilenetv2.pkl) I could reach to:  
 Yaw: 7.8606, Pitch: 6.9765, Roll: 6.2573, **MAE: 7.0315**
 
-And with Squeezenet_1_0 architechture [snapshot]() we can get:  
+And with **Squeezenet_1_0** architechture [snapshot]() we can get:  
 Yaw: 7.2015, Pitch: 7.9230, Roll: 6.8532, **MAE: 7.3259**
 
-Lastly, Squeezenet_1_1 architechture [snapshot]() could perform:  
+Lastly, **Squeezenet_1_1** architechture [snapshot]() could perform:  
 Yaw: 9.3317, Pitch: 7.5716, Roll: 6.6840, **MAE: 7.8624**
 
 It is good to mention about [HopeNet-Lite](https://github.com/OverEuro/deep-head-pose-lite), which also adopted a MobileNet like architecture for HopeNet.
