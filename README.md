@@ -56,10 +56,10 @@ Yaw: 6.0897, Pitch: 6.9588, Roll: 6.0907, **MAE: 6.3797**
 With **MobileNetV2** architechture [snapshot](https://github.com/shahroudy/deep-head-pose/raw/master/models/mobilenetv2.pkl) I could reach to:  
 Yaw: 7.3247, Pitch: 6.9425, Roll: 6.2106, **MAE: 6.8259**
 
-And with **Squeezenet_1_0** architechture [snapshot]() we can get:  
+And with **Squeezenet_1_0** architechture [snapshot](https://github.com/shahroudy/deep-head-pose/raw/master/models/squeezenet_1_0.pkl) we can get:  
 Yaw: 7.2015, Pitch: 7.9230, Roll: 6.8532, **MAE: 7.3259**
 
-Lastly, **Squeezenet_1_1** architechture [snapshot]() could perform:  
+Lastly, **Squeezenet_1_1** architechture [snapshot](https://github.com/shahroudy/deep-head-pose/raw/master/models/squeezenet_1_1.pkl) could perform:  
 Yaw: 8.8815, Pitch: 7.4020, Roll: 7.1891, **MAE: 7.8242**
 
 It is good to mention about [HopeNet-Lite](https://github.com/OverEuro/deep-head-pose-lite), which also adopted a MobileNet like architecture for HopeNet.
