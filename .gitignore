@@ -2,6 +2,8 @@
 *.npy
 data/*
 output/*
+datasets/*
+.vscode/*
 *.jpg
 *.png
 .vscode/*
