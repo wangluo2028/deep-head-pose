@@ -6,6 +6,6 @@ output/*
 *.png
 .vscode/*
 checkpoints/*
-dlib/*
+dlib/**
 models/*
 install.bash
