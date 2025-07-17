@@ -16,6 +16,20 @@ import torch.nn.functional as F
 import datasets, hopenet
 import torch.utils.model_zoo as model_zoo
 
+# 设置modelzoo下载路径为checkpoints目录
+def setup_modelzoo_download_path():
+    """设置modelzoo下载路径为checkpoints目录"""
+    checkpoint_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'checkpoints')
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
+    
+    # 设置torch hub的缓存目录
+    os.environ['TORCH_HOME'] = checkpoint_dir
+    # 设置modelzoo的缓存目录
+    torch.hub.set_dir(checkpoint_dir)
+    
+    return checkpoint_dir
+
 model_urls = {
     'alexnet': 'https://download.pytorch.org/models/alexnet-owt-4df8aa71.pth',
 }
@@ -92,6 +106,10 @@ def load_filtered_state_dict(model, snapshot):
 if __name__ == '__main__':
     args = parse_args()
 
+    # 设置modelzoo下载路径
+    checkpoint_dir = setup_modelzoo_download_path()
+    print(f'Modelzoo下载路径设置为: {checkpoint_dir}')
+
     cudnn.enabled = True
     num_epochs = args.num_epochs
     batch_size = args.batch_size
@@ -101,6 +119,7 @@ if __name__ == '__main__':
         os.makedirs('output/snapshots')
 
     model = hopenet.AlexNet(66)
+    print(f'从modelzoo下载预训练模型到: {checkpoint_dir}')
     load_filtered_state_dict(model, model_zoo.load_url(model_urls['alexnet']))
 
     print('Loading data.')
