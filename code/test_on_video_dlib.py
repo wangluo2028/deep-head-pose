@@ -1,4 +1,5 @@
 import sys, os, argparse
+import time  # 添加time模块导入
 
 import numpy as np
 import cv2
@@ -16,8 +17,9 @@ from PIL import Image
 
 import datasets, hopenet, utils
 
-from skimage import io
+# from skimage import io
 import dlib
+print(dlib.DLIB_USE_CUDA)  # 若输出 True，则 GPU 已成功启用
 
 def parse_args():
     """Parse input arguments."""
@@ -58,26 +60,26 @@ if __name__ == '__main__':
     # Dlib face detection model
     cnn_face_detector = dlib.cnn_face_detection_model_v1(args.face_model)
 
-    print 'Loading snapshot.'
+    print('Loading snapshot.')
     # Load snapshot
     saved_state_dict = torch.load(snapshot_path)
     model.load_state_dict(saved_state_dict)
 
-    print 'Loading data.'
+    print('Loading data.')
 
-    transformations = transforms.Compose([transforms.Scale(224),
+    transformations = transforms.Compose([transforms.Resize(224),  # Scale is deprecated, use Resize
     transforms.CenterCrop(224), transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
     model.cuda(gpu)
 
-    print 'Ready to test network.'
+    print('Ready to test network.')
 
     # Test the Model
     model.eval()  # Change model to 'eval' mode (BN uses moving mean/var).
     total = 0
 
-    idx_tensor = [idx for idx in xrange(66)]
+    idx_tensor = [idx for idx in range(66)]  # Changed xrange to range
     idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
 
     video = cv2.VideoCapture(video_path)
@@ -103,7 +105,7 @@ if __name__ == '__main__':
     frame_num = 1
 
     while frame_num <= args.n_frames:
-        print frame_num
+        print(frame_num)
 
         ret,frame = video.read()
         if ret == False:
@@ -111,8 +113,13 @@ if __name__ == '__main__':
 
         cv2_frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
 
+        # 测量检测时间
+        start_time = time.time()
         # Dlib detect
         dets = cnn_face_detector(cv2_frame, 1)
+        end_time = time.time()
+        detection_time = end_time - start_time
+        print(f"Face detection time: {detection_time:.3f} seconds")
 
         for idx, det in enumerate(dets):
             # Get x_min, y_min, x_max, y_max, conf
@@ -125,14 +132,16 @@ if __name__ == '__main__':
             if conf > 1.0:
                 bbox_width = abs(x_max - x_min)
                 bbox_height = abs(y_max - y_min)
-                x_min -= 2 * bbox_width / 4
-                x_max += 2 * bbox_width / 4
-                y_min -= 3 * bbox_height / 4
-                y_max += bbox_height / 4
-                x_min = max(x_min, 0); y_min = max(y_min, 0)
-                x_max = min(frame.shape[1], x_max); y_max = min(frame.shape[0], y_max)
+                x_min = int(x_min - 2 * bbox_width / 4)
+                x_max = int(x_max + 2 * bbox_width / 4)
+                y_min = int(y_min - 3 * bbox_height / 4)
+                y_max = int(y_max + bbox_height / 4)
+                x_min = max(0, x_min)
+                y_min = max(0, y_min)
+                x_max = min(frame.shape[1], x_max)
+                y_max = min(frame.shape[0], y_max)
                 # Crop image
-                img = cv2_frame[y_min:y_max,x_min:x_max]
+                img = cv2_frame[int(y_min):int(y_max), int(x_min):int(x_max)]
                 img = Image.fromarray(img)
 
                 # Transform
@@ -143,9 +152,9 @@ if __name__ == '__main__':
 
                 yaw, pitch, roll = model(img)
 
-                yaw_predicted = F.softmax(yaw)
-                pitch_predicted = F.softmax(pitch)
-                roll_predicted = F.softmax(roll)
+                yaw_predicted = F.softmax(yaw, dim=1)  # Added dim parameter
+                pitch_predicted = F.softmax(pitch, dim=1)
+                roll_predicted = F.softmax(roll, dim=1)
                 # Get continuous predictions in degrees.
                 yaw_predicted = torch.sum(yaw_predicted.data[0] * idx_tensor) * 3 - 99
                 pitch_predicted = torch.sum(pitch_predicted.data[0] * idx_tensor) * 3 - 99
