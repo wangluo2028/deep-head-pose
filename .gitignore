@@ -4,3 +4,8 @@ data/*
 output/*
 *.jpg
 *.png
+.vscode/*
+checkpoints/*
+dlib/*
+models/*
+install.bash
