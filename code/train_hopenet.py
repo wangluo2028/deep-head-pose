@@ -32,13 +32,34 @@ def setup_modelzoo_download_path():
     
     return checkpoint_dir
 
+def setup_device(gpu_id):
+    """设置GPU设备，如果gpu_id为-1则使用所有GPU"""
+    if gpu_id == -1:
+        # 使用所有可用的GPU
+        if torch.cuda.is_available():
+            device = torch.device('cuda')
+            num_gpus = torch.cuda.device_count()
+            print(f'使用所有GPU: {num_gpus}个GPU可用')
+            return device, num_gpus
+        else:
+            print('警告: 没有可用的GPU，将使用CPU')
+            return torch.device('cpu'), 0
+    else:
+        # 使用指定的GPU
+        if torch.cuda.is_available() and gpu_id < torch.cuda.device_count():
+            device = torch.device(f'cuda:{gpu_id}')
+            print(f'使用GPU: {gpu_id}')
+            return device, 1
+        else:
+            print(f'警告: GPU {gpu_id}不可用，将使用CPU')
+            return torch.device('cpu'), 0
 
 def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(
         description='Head pose estimation using the Hopenet network.')
     parser.add_argument(
-        '--gpu', dest='gpu_id', help='GPU device id to use [0]',
+        '--gpu_id', dest='gpu_id', help='GPU device id to use [0], use -1 for all GPUs',
         default=0, type=int)
     parser.add_argument(
         '--num_epochs', dest='num_epochs', 
@@ -80,10 +101,16 @@ def parse_args():
 
 def get_ignored_params(model, arch):
     # Generator function that yields ignored params.
+    # 处理DataParallel的情况
+    if hasattr(model, 'module'):
+        actual_model = model.module
+    else:
+        actual_model = model
+        
     if arch.find('ResNet') >= 0:
-        b = [model.conv1, model.bn1, model.fc_finetune]
+        b = [actual_model.conv1, actual_model.bn1, actual_model.fc_finetune]
     elif arch.find('Squeezenet') >= 0 or arch.find('MobileNetV2') >= 0:
-        b = [model.features[0]]
+        b = [actual_model.features[0]]
     else:
         raise('Invalid architecture is passed!')
 
@@ -97,10 +124,16 @@ def get_ignored_params(model, arch):
 
 def get_non_ignored_params(model, arch):
     # Generator function that yields params that will be optimized.
+    # 处理DataParallel的情况
+    if hasattr(model, 'module'):
+        actual_model = model.module
+    else:
+        actual_model = model
+        
     if arch.find('ResNet') >= 0:
-        b = [model.layer1, model.layer2, model.layer3, model.layer4]
+        b = [actual_model.layer1, actual_model.layer2, actual_model.layer3, actual_model.layer4]
     elif arch.find('Squeezenet') >= 0 or arch.find('MobileNetV2') >= 0:
-        b = [model.features[1:]]
+        b = [actual_model.features[1:]]
     else:
         raise('Invalid architecture is passed!')
 
@@ -114,13 +147,19 @@ def get_non_ignored_params(model, arch):
 
 def get_fc_params(model, arch):
     # Generator function that yields fc layer params.
+    # 处理DataParallel的情况
+    if hasattr(model, 'module'):
+        actual_model = model.module
+    else:
+        actual_model = model
+        
     if arch.find('ResNet') >= 0:
-        b = [model.fc_yaw, model.fc_pitch, model.fc_roll]
+        b = [actual_model.fc_yaw, actual_model.fc_pitch, actual_model.fc_roll]
     elif arch.find('Squeezenet') >= 0 or arch.find('MobileNetV2') >= 0:
         b = [
-            model.classifier_yaw, 
-            model.classifier_pitch, 
-            model.classifier_roll
+            actual_model.classifier_yaw, 
+            actual_model.classifier_pitch, 
+            actual_model.classifier_roll
         ]
     else:
         raise('Invalid architecture is passed!')
@@ -148,7 +187,9 @@ if __name__ == '__main__':
     cudnn.enabled = True
     num_epochs = args.num_epochs
     batch_size = args.batch_size
-    gpu = args.gpu_id
+    
+    # 设置设备
+    device, num_gpus = setup_device(args.gpu_id)
 
     if not os.path.exists('output/snapshots'):
         os.makedirs('output/snapshots')
@@ -242,15 +283,19 @@ if __name__ == '__main__':
         shuffle=True,
         num_workers=2)
 
-    model.cuda(gpu)
-    criterion = nn.CrossEntropyLoss().cuda(gpu)
-    reg_criterion = nn.MSELoss().cuda(gpu)
+    # 将模型移动到设备并设置数据并行
+    if num_gpus > 1:
+        model = torch.nn.DataParallel(model)
+    model = model.to(device)
+    
+    criterion = nn.CrossEntropyLoss().to(device)
+    reg_criterion = nn.MSELoss().to(device)
     # Regression loss coefficient
     alpha = args.alpha
 
-    softmax = nn.Softmax().cuda(gpu)
+    softmax = nn.Softmax().to(device)
     idx_tensor = [idx for idx in range(66)]
-    idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
+    idx_tensor = Variable(torch.FloatTensor(idx_tensor)).to(device)
 
     optimizer = torch.optim.Adam([
         {'params': get_ignored_params(model, args.arch), 'lr': 0},
@@ -261,17 +306,17 @@ if __name__ == '__main__':
     print('Ready to train network.')
     for epoch in range(num_epochs):
         for i, (images, labels, cont_labels, name) in enumerate(train_loader):
-            images = Variable(images).cuda(gpu)
+            images = Variable(images).to(device)
 
             # Binned labels
-            label_yaw = Variable(labels[:,0]).cuda(gpu)
-            label_pitch = Variable(labels[:,1]).cuda(gpu)
-            label_roll = Variable(labels[:,2]).cuda(gpu)
+            label_yaw = Variable(labels[:,0]).to(device)
+            label_pitch = Variable(labels[:,1]).to(device)
+            label_roll = Variable(labels[:,2]).to(device)
 
             # Continuous labels
-            label_yaw_cont = Variable(cont_labels[:,0]).cuda(gpu)
-            label_pitch_cont = Variable(cont_labels[:,1]).cuda(gpu)
-            label_roll_cont = Variable(cont_labels[:,2]).cuda(gpu)
+            label_yaw_cont = Variable(cont_labels[:,0]).to(device)
+            label_pitch_cont = Variable(cont_labels[:,1]).to(device)
+            label_roll_cont = Variable(cont_labels[:,2]).to(device)
 
             # Forward pass
             yaw, pitch, roll = model(images)
@@ -304,7 +349,7 @@ if __name__ == '__main__':
 
             loss_seq = [loss_yaw, loss_pitch, loss_roll]
             grad_seq = \
-                [torch.tensor(1.0).cuda(gpu) for _ in range(len(loss_seq))]
+                [torch.tensor(1.0).to(device) for _ in range(len(loss_seq))]
             optimizer.zero_grad()
             torch.autograd.backward(loss_seq, grad_seq)
             optimizer.step()
@@ -325,5 +370,10 @@ if __name__ == '__main__':
         # Save models at numbered epochs.
         if epoch % 1 == 0 and epoch < num_epochs:
             print('Taking snapshot...')
-            torch.save(model.state_dict(),
-            'output/snapshots/' + args.output_string + '_epoch_'+ str(epoch+1) + '.pkl')
+            # 如果使用DataParallel，需要保存model.module的状态
+            if num_gpus > 1:
+                torch.save(model.module.state_dict(),
+                'output/snapshots/' + args.output_string + '_epoch_'+ str(epoch+1) + '.pkl')
+            else:
+                torch.save(model.state_dict(),
+                'output/snapshots/' + args.output_string + '_epoch_'+ str(epoch+1) + '.pkl')
